@@ -18,6 +18,16 @@ namespace AlbTasks.Models
             return JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json) ?? new();
         }
 
+        public void SalvarTemplates(Dictionary<string, List<string>> templates)
+        {
+            var options = new JsonSerializerOptions { 
+                WriteIndented = true,
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            };
+            string json = JsonSerializer.Serialize(templates, options);
+            File.WriteAllText(caminhoPipelines, json);
+        }
+
         public List<DemandaAtiva> CarregarEstado()
         {
             if (!File.Exists(caminhoEstado))
@@ -29,7 +39,10 @@ namespace AlbTasks.Models
 
         public void SalvarEstado(List<DemandaAtiva> demandas)
         {
-            var options = new JsonSerializerOptions { WriteIndented = true };
+            var options = new JsonSerializerOptions { 
+                WriteIndented = true,
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping 
+            };
             string json = JsonSerializer.Serialize(demandas, options);
             File.WriteAllText(caminhoEstado, json);
         }

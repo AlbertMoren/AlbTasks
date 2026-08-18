@@ -10,5 +10,10 @@
     "Rodar testes locais",
     "Verificar code smells",
     "Aprovar PR"
+  ],
+  "teste": [
+    "teste",
+    "teste",
+    "teste"
   ]
 }
