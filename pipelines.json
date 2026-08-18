@@ -1,0 +1,14 @@
+{
+  "Configuracao de Servidor": [
+    "Acessar a máquina via SSH",
+    "Atualizar variáveis de ambiente",
+    "Reiniciar o serviço",
+    "Testar endpoint de health check"
+  ],
+  "Revisao de Codigo": [
+    "Fazer checkout da branch",
+    "Rodar testes locais",
+    "Verificar code smells",
+    "Aprovar PR"
+  ]
+}
