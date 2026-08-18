@@ -21,7 +21,6 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Topo -->
             <Grid Grid.Row="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -31,8 +30,7 @@
                 <ListBox Grid.Column="0" ItemsSource="{Binding DemandasAtivas}" 
                          SelectedItem="{Binding DemandaSelecionada}" 
                          Background="Transparent" BorderThickness="0"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                         Margin="0,0,5,0">
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled" Margin="0,0,5,0">
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
                             <WrapPanel Orientation="Horizontal" />
@@ -73,16 +71,14 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
 
-                <!-- Grupo de Botões (Nova Pipeline e Nova Demanda) -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
                     <Button Content="📝" FontSize="14" Width="30" Height="30" Margin="0,0,5,0" 
-                            Command="{Binding AbrirFormPipelineCommand}" Cursor="Hand" ToolTip="Criar Nova Pipeline"/>
+                            Command="{Binding AbrirFormPipelineCommand}" Cursor="Hand" ToolTip="Gerenciar Pipelines"/>
                     <Button Content=" + " FontSize="16" FontWeight="Bold" Width="30" Height="30" 
                             Command="{Binding AbrirFormCommand}" Cursor="Hand" ToolTip="Adicionar Demanda"/>
                 </StackPanel>
             </Grid>
 
-            <!-- Centro e Rodapé -->
             <TextBlock Grid.Row="1" Text="{Binding TextoPassoAtual}" FontSize="18" FontWeight="Bold" 
                        TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" Margin="0,25"/>
             <Button Grid.Row="2" Command="{Binding AvancarPassoCommand}" Content="FEITO (Enter)" 
@@ -96,25 +92,24 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
+            
             <TextBlock Grid.Row="0" Text="Nova Demanda" FontSize="16" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
             <TextBox Grid.Row="1" Text="{Binding NovaDemandaNome, UpdateSourceTrigger=PropertyChanged}" FontSize="14" Padding="5" Margin="0,0,0,10"/>
-            <!-- ComboBox com Placeholder Simulado -->
+            
             <Grid Grid.Row="2" Margin="0,0,0,10" VerticalAlignment="Top">
                 <ComboBox ItemsSource="{Binding TiposDePipeline}" 
                           SelectedItem="{Binding NovaDemandaPipeline}" 
                           FontSize="14" Padding="5" />
                 
-                <!-- O texto cinza que some quando algo é selecionado -->
                 <TextBlock Text="Selecione uma opção..." Foreground="Gray" FontSize="14" 
                            Margin="8,7,0,0" IsHitTestVisible="False">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Setter Property="Visibility" Value="Hidden"/>
                             <Style.Triggers>
-                                <!-- Mostra o texto se a variável estiver nula ou vazia -->
                                 <DataTrigger Binding="{Binding NovaDemandaPipeline}" Value="{x:Null}">
                                     <Setter Property="Visibility" Value="Visible"/>
                                 </DataTrigger>
@@ -126,6 +121,7 @@
                     </TextBlock.Style>
                 </TextBlock>
             </Grid>
+
             <Grid Grid.Row="3">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -140,18 +136,17 @@
         <Grid Background="White" Margin="15" 
               Visibility="{Binding IsFormularioPipelineVisivel, Converter={StaticResource BoolToVis}}">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/> <!-- Título -->
-                <RowDefinition Height="Auto"/> <!-- Dropdown para selecionar Ação/Edição -->
-                <RowDefinition Height="Auto"/> <!-- Label Nome -->
-                <RowDefinition Height="Auto"/> <!-- Input Nome -->
-                <RowDefinition Height="Auto"/> <!-- Label Passos -->
-                <RowDefinition Height="*"/>    <!-- Input Passos -->
-                <RowDefinition Height="Auto"/> <!-- Botões -->
+                <RowDefinition Height="Auto"/> 
+                <RowDefinition Height="Auto"/> 
+                <RowDefinition Height="Auto"/> 
+                <RowDefinition Height="Auto"/> 
+                <RowDefinition Height="Auto"/> 
+                <RowDefinition Height="*"/>    
+                <RowDefinition Height="Auto"/> 
             </Grid.RowDefinitions>
             
             <TextBlock Grid.Row="0" Text="Gerenciar Pipelines" FontSize="16" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
             
-            <!-- Seletor: Criar Nova ou Editar Existente -->
             <ComboBox Grid.Row="1" ItemsSource="{Binding OpcoesEdicaoPipeline}" 
                       SelectedItem="{Binding OpcaoEdicaoSelecionada}" 
                       FontSize="14" Padding="5" Margin="0,0,0,15" Background="#F0F0F0" FontWeight="SemiBold"/>
@@ -167,7 +162,7 @@
             
             <Grid Grid.Row="6">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/> <!-- Botão Excluir (Só aparece na edição) -->
+                    <ColumnDefinition Width="Auto"/> 
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>

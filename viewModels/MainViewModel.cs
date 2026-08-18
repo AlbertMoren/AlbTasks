@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Windows;
 using System.Windows.Input;
 using AlbTasks.Models;
 
@@ -27,13 +28,14 @@ namespace AlbTasks.ViewModels
             }
         }
 
-        private string _textoPassoAtual = "Nenhuma demanda selecionada";
+        private string _textoPassoAtual = "Tudo limpo! Nenhuma demanda pendente. ☕";
         public string TextoPassoAtual
         {
             get => _textoPassoAtual;
             set { _textoPassoAtual = value; OnPropertyChanged(); }
         }
 
+        // --- PROPRIEDADES: NOVA DEMANDA ---
         private bool _isFormularioVisivel;
         public bool IsFormularioVisivel
         {
@@ -48,12 +50,14 @@ namespace AlbTasks.ViewModels
             set { _novaDemandaNome = value; OnPropertyChanged(); }
         }
 
-        private string _novaDemandaPipeline = string.Empty;
-        public string NovaDemandaPipeline
+        private string? _novaDemandaPipeline; // Null ajuda o texto cinza a aparecer
+        public string? NovaDemandaPipeline
         {
             get => _novaDemandaPipeline;
             set { _novaDemandaPipeline = value; OnPropertyChanged(); }
         }
+
+        // --- PROPRIEDADES: GERENCIAR PIPELINE ---
         private bool _isFormularioPipelineVisivel;
         public bool IsFormularioPipelineVisivel
         {
@@ -71,13 +75,13 @@ namespace AlbTasks.ViewModels
             {
                 _opcaoEdicaoSelecionada = value;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(IsModoEdicao)); 
+                OnPropertyChanged(nameof(IsModoEdicao));
                 CarregarDadosPipelineParaEdicao();
             }
         }
 
         public bool IsModoEdicao => OpcaoEdicaoSelecionada != "➕ Criar Nova Pipeline" && !string.IsNullOrEmpty(OpcaoEdicaoSelecionada);
-        private string _pipelineOriginalNome = string.Empty; // Guarda o nome antigo caso você o altere na edição
+        private string _pipelineOriginalNome = string.Empty;
 
         private string _novoPipelineNome = string.Empty;
         public string NovoPipelineNome
@@ -93,6 +97,7 @@ namespace AlbTasks.ViewModels
             set { _novoPipelinePassos = value; OnPropertyChanged(); }
         }
 
+        // --- COMANDOS ---
         public ICommand AvancarPassoCommand { get; }
         public ICommand AbrirFormCommand { get; }
         public ICommand CancelarFormCommand { get; }
@@ -112,26 +117,27 @@ namespace AlbTasks.ViewModels
             DemandasAtivas = new ObservableCollection<DemandaAtiva>(estadoSalvo);
             TiposDePipeline = new ObservableCollection<string>(_templates.Keys);
 
-            //if (TiposDePipeline.Any()) NovaDemandaPipeline = TiposDePipeline.First();
+            // Inicia já puxando a primeira demanda para a tela
+            DemandaSelecionada = DemandasAtivas.FirstOrDefault();
+            AtualizarTextoPassoAtual();
+
+            AvancarPassoCommand = new RelayCommand(AvancarPasso);
+            
             AbrirFormCommand = new RelayCommand(() => 
             {
                 NovaDemandaNome = string.Empty;
-                NovaDemandaPipeline = string.Empty; // Garante que o ComboBox venha vazio
+                NovaDemandaPipeline = null; 
                 IsFormularioVisivel = true;
             });
             
-            AvancarPassoCommand = new RelayCommand(AvancarPasso);
-            
-            // Comandos Demanda
-            AbrirFormCommand = new RelayCommand(() => IsFormularioVisivel = true);
             CancelarFormCommand = new RelayCommand(() => 
             {
                 IsFormularioVisivel = false;
                 NovaDemandaNome = string.Empty;
             });
+            
             SalvarNovaDemandaCommand = new RelayCommand(SalvarNovaDemanda);
 
-            // Comandos Pipeline
             AbrirFormPipelineCommand = new RelayCommand(() => 
             {
                 AtualizarOpcoesEdicao();
@@ -186,7 +192,6 @@ namespace AlbTasks.ViewModels
 
             if (passos.Count == 0) return;
 
-            // Se for modo edição e o nome foi alterado, precisamos limpar o nome velho
             if (IsModoEdicao && _pipelineOriginalNome != NovoPipelineNome)
             {
                 _templates.Remove(_pipelineOriginalNome);
@@ -199,7 +204,6 @@ namespace AlbTasks.ViewModels
                 _arquivos.SalvarEstado(DemandasAtivas.ToList());
             }
 
-            // Salva os dados atualizados (ou cria os novos)
             _templates[NovoPipelineNome] = passos;
             if (!TiposDePipeline.Contains(NovoPipelineNome)) TiposDePipeline.Add(NovoPipelineNome);
 
@@ -207,9 +211,6 @@ namespace AlbTasks.ViewModels
             NovaDemandaPipeline = NovoPipelineNome; 
             AtualizarTextoPassoAtual(); 
 
-            // MELHORIA AQUI: Em vez de executar o CancelarFormPipelineCommand (que fecharia a tela),
-            // nós atualizamos a lista do Dropdown (para incluir a nova pipeline) e 
-            // voltamos o seletor para o modo de criação, o que já limpa as caixas de texto automaticamente.
             AtualizarOpcoesEdicao();
             OpcaoEdicaoSelecionada = "➕ Criar Nova Pipeline";
         }
@@ -222,18 +223,15 @@ namespace AlbTasks.ViewModels
                 TiposDePipeline.Remove(_pipelineOriginalNome);
                 _arquivos.SalvarTemplates(_templates);
                 
-                
                 var demandasRemover = DemandasAtivas.Where(x => x.TipoPipeline == _pipelineOriginalNome).ToList();
                 foreach (var d in demandasRemover) DemandasAtivas.Remove(d);
                 _arquivos.SalvarEstado(DemandasAtivas.ToList());
 
-                
                 if (DemandaSelecionada != null && demandasRemover.Contains(DemandaSelecionada))
                 {
                     DemandaSelecionada = DemandasAtivas.FirstOrDefault();
                 }
 
-                
                 AtualizarOpcoesEdicao();
                 OpcaoEdicaoSelecionada = "➕ Criar Nova Pipeline";
             }
@@ -241,48 +239,65 @@ namespace AlbTasks.ViewModels
 
         private void SalvarNovaDemanda()
         {
-            // Valida o nome
+            // O GRITO DE AVISO
             if (string.IsNullOrWhiteSpace(NovaDemandaNome))
             {
-                System.Windows.MessageBox.Show("Você precisa dar um nome para a demanda!", "Atenção", 
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                MessageBox.Show("Você precisa dar um nome para a demanda!", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            // Valida a pipeline
             if (string.IsNullOrWhiteSpace(NovaDemandaPipeline)) 
             {
-                System.Windows.MessageBox.Show("Por favor, selecione uma opção de pipeline na lista!", "Atenção", 
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                MessageBox.Show("Por favor, selecione uma opção de pipeline na lista!", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            // Se passar pelas validações, salva normalmente
             var nova = new DemandaAtiva { NomeDemanda = NovaDemandaNome, TipoPipeline = NovaDemandaPipeline, IndicePassoAtual = 0 };
             DemandasAtivas.Add(nova);
             _arquivos.SalvarEstado(DemandasAtivas.ToList());
             DemandaSelecionada = nova; 
             CancelarFormCommand.Execute(null);
         }
+
         private void AvancarPasso()
         {
             if (DemandaSelecionada == null || !_templates.ContainsKey(DemandaSelecionada.TipoPipeline)) return;
+
             var passos = _templates[DemandaSelecionada.TipoPipeline];
             DemandaSelecionada.IndicePassoAtual++;
+
             if (DemandaSelecionada.IndicePassoAtual >= passos.Count)
             {
                 DemandasAtivas.Remove(DemandaSelecionada);
-                TextoPassoAtual = "Demanda Finalizada!";
+                DemandaSelecionada = DemandasAtivas.FirstOrDefault(); // Pula pra próxima
+
+                if (DemandaSelecionada == null)
+                {
+                    TextoPassoAtual = "Demanda Finalizada! 🎉\nNenhuma outra pendente.";
+                }
             }
-            else AtualizarTextoPassoAtual();
+            else
+            {
+                AtualizarTextoPassoAtual();
+            }
+
             _arquivos.SalvarEstado(DemandasAtivas.ToList());
         }
 
         private void AtualizarTextoPassoAtual()
         {
-            if (DemandaSelecionada == null) return;
+            if (DemandaSelecionada == null)
+            {
+                TextoPassoAtual = DemandasAtivas.Any() 
+                    ? "Selecione uma demanda acima 👆" 
+                    : "Tudo limpo! Nenhuma demanda pendente. ☕";
+                return;
+            }
+
             if (_templates.TryGetValue(DemandaSelecionada.TipoPipeline, out var passos) && DemandaSelecionada.IndicePassoAtual < passos.Count)
+            {
                 TextoPassoAtual = passos[DemandaSelecionada.IndicePassoAtual];
+            }
         }
     }
 }
