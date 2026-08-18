@@ -8,8 +8,6 @@ namespace AlbTasks
         public MainWindow()
         {
             InitializeComponent();
-            
-            // Aqui conectamos a tela aos nossos dados usando o padrão MVVM
             DataContext = new MainViewModel();
         }
     }
