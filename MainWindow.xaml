@@ -5,8 +5,38 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AlbTasks"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="AlbTasks" Height="220" Width="350"
+        Topmost="True" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+    
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
+        <!-- Topo: Seleção da Demanda -->
+        <ComboBox Grid.Row="0" 
+                  ItemsSource="{Binding DemandasAtivas}" 
+                  SelectedItem="{Binding DemandaSelecionada}" 
+                  DisplayMemberPath="NomeDemanda" 
+                  FontSize="14" Padding="5" 
+                  ToolTip="Selecione a demanda em andamento"/>
+
+        <!-- Centro: Passo Atual (O Foco) -->
+        <TextBlock Grid.Row="1" 
+                   Text="{Binding TextoPassoAtual}" 
+                   FontSize="18" FontWeight="Bold" 
+                   TextWrapping="Wrap" TextAlignment="Center" 
+                   VerticalAlignment="Center" Margin="0,15"/>
+
+        <!-- Rodapé: Botão Feito -->
+        <Button Grid.Row="2" 
+                Command="{Binding AvancarPassoCommand}" 
+                Content="FEITO (Enter)" 
+                FontSize="16" FontWeight="Bold" 
+                Background="#2E8B57" Foreground="White" 
+                Padding="10" Cursor="Hand" BorderThickness="0"
+                IsDefault="True"/> <!-- O IsDefault permite você apertar Enter no teclado para avançar -->
     </Grid>
 </Window>
