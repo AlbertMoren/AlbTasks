@@ -4,18 +4,19 @@ Um gerenciador de demandas minimalista para Windows, focado em reduzir a carga m
 
 ## Funcionalidades
 
-* **Interface Flutuante (Always on Top):** O aplicativo atua como um widget discreto no centro da tela, sempre visível sobre outras janelas, ocupando o mínimo de espaço possível.
+* **Interface Flutuante (Always on Top):** O aplicativo atua como um widget discreto no centro da tela, sempre visível sobre outras janelas, ocupando o mínimo de espaço possível (autoajustável ao conteúdo).
+* **Gestão de Tarefas Diárias:** Acompanhe lembretes e demandas do dia a dia diretamente na janela principal.
 * **Pipelines Customizáveis:** Crie, edite e exclua seus próprios fluxos de trabalho. O cadastro é rápido e feito em texto corrido (separando as etapas por `;`).
 * **Troca Rápida de Contexto:** Alternância instantânea entre múltiplas tarefas ativas através de "cards" visuais clicáveis, abandonando os menus suspensos tradicionais.
 * **Foco e Agilidade:** Avance para o próximo passo da sua demanda com um único clique ou simplesmente pressionando `Enter`.
 * **Proteção contra Erros:** Sistema de alertas integrado que impede o salvamento de tarefas incompletas ou sem contexto.
-* **Armazenamento Local:** Dados mantidos em arquivos leves `.json` (`pipelines.json` e `estado_atual.json`). Zero necessidade de bancos de dados complexos.
+* **Armazenamento Local:** Dados mantidos em arquivos leves `.json` (`pipelines.json`, `diarias.json` e `estado_atual.json`). Zero necessidade de bancos de dados complexos.
 
 ## Tecnologias Utilizadas
 
 * **Linguagem:** C# .NET 8.0
 * **Interface Gráfica:** Windows Presentation Foundation (WPF)
-* **Padrão de Projeto:** Arquitetura MVVM (Model-View-ViewModel) purista (sem code-behind acoplado)
+* **Arquitetura:** Padrão MVVM (Model-View-ViewModel) purista (sem code-behind acoplado), com interface modularizada em sub-views para fácil manutenção.
 
 ## Como Compilar e Usar
 

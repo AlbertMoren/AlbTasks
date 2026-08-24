@@ -1,0 +1,35 @@
+<UserControl x:Class="AlbTasks.Views.FormPipeline"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
+    <Grid Background="White" Margin="10" Width="510">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <TextBlock Grid.Row="0" Text="Gerenciar Pipelines" FontSize="18" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
+        <ComboBox Grid.Row="1" ItemsSource="{Binding OpcoesEdicaoPipeline}" SelectedItem="{Binding OpcaoEdicaoSelecionada}" FontSize="14" Padding="5" Margin="0,0,0,12" Background="#F0F0F0" FontWeight="SemiBold"/>
+        
+        <TextBlock Grid.Row="2" Text="Nome da Pipeline:" FontSize="12" Foreground="Gray" Margin="0,0,0,2"/>
+        <TextBox Grid.Row="3" Text="{Binding NovoPipelineNome, UpdateSourceTrigger=PropertyChanged}" FontSize="14" Padding="5" Margin="0,0,0,10"/>
+        
+        <TextBlock Grid.Row="4" Text="Etapas (separe com ponto e vírgula ';'):" FontSize="12" Foreground="Gray" Margin="0,0,0,2"/>
+        <TextBox Grid.Row="5" Text="{Binding NovoPipelinePassos, UpdateSourceTrigger=PropertyChanged}" FontSize="14" Padding="5" Margin="0,0,0,12" MinHeight="60" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+        
+        <Grid Grid.Row="6">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <Button Grid.Column="0" Content="🗑️" Command="{Binding ExcluirPipelineCommand}" Visibility="{Binding IsModoEdicao, Converter={StaticResource BoolToVis}}" Margin="0,0,10,0" Padding="8,8" Width="40" Background="#DC143C" Foreground="White" BorderThickness="0" Cursor="Hand" ToolTip="Excluir Pipeline"/>
+            <Button Grid.Column="1" Content="Cancelar" Command="{Binding CancelarFormPipelineCommand}" Margin="0,0,5,0" Padding="8" Background="Gray" Foreground="White" BorderThickness="0" Cursor="Hand"/>
+            <Button Grid.Column="2" Content="Salvar" Command="{Binding SalvarNovoPipelineCommand}" Margin="5,0,0,0" Padding="8" Background="#2E8B57" Foreground="White" BorderThickness="0" Cursor="Hand"/>
+        </Grid>
+    </Grid>
+</UserControl>

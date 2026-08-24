@@ -1,4 +1,6 @@
 ﻿using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 using AlbTasks.ViewModels;
 
 namespace AlbTasks
@@ -9,6 +11,17 @@ namespace AlbTasks
         {
             InitializeComponent();
             DataContext = new MainViewModel();
+        }
+
+        private void Border_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is Border border && border.DataContext is LembreteViewModel vm)
+            {
+                if (DataContext is MainViewModel mainVm)
+                {
+                    mainVm.EditarDiariaCommand.Execute(vm.AtividadeOriginal);
+                }
+            }
         }
     }
 }

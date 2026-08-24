@@ -1,41 +1,20 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
-using System.Windows;
 using System.Windows.Input;
 using AlbTasks.Models;
+using System.Text.Json;
+using System.Windows.Threading;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace AlbTasks.ViewModels
 {
-    public class MainViewModel : BaseViewModel
+    public class MainViewModel : INotifyPropertyChanged
     {
-        private readonly GerenciadorArquivos _arquivos;
-        private readonly Dictionary<string, List<string>> _templates;
-
-        public ObservableCollection<DemandaAtiva> DemandasAtivas { get; set; }
-        public ObservableCollection<string> TiposDePipeline { get; set; }
-
-        private DemandaAtiva? _demandaSelecionada;
-        public DemandaAtiva? DemandaSelecionada
-        {
-            get => _demandaSelecionada;
-            set
-            {
-                _demandaSelecionada = value;
-                OnPropertyChanged();
-                AtualizarTextoPassoAtual();
-            }
-        }
-
-        private string _textoPassoAtual = "Tudo limpo! Nenhuma demanda pendente. ☕";
-        public string TextoPassoAtual
-        {
-            get => _textoPassoAtual;
-            set { _textoPassoAtual = value; OnPropertyChanged(); }
-        }
-
-        // --- PROPRIEDADES: NOVA DEMANDA ---
+        // ------------------ CONTROLE DE TELA ------------------
         private bool _isFormularioVisivel;
         public bool IsFormularioVisivel
         {
@@ -43,21 +22,6 @@ namespace AlbTasks.ViewModels
             set { _isFormularioVisivel = value; OnPropertyChanged(); }
         }
 
-        private string _novaDemandaNome = string.Empty;
-        public string NovaDemandaNome
-        {
-            get => _novaDemandaNome;
-            set { _novaDemandaNome = value; OnPropertyChanged(); }
-        }
-
-        private string? _novaDemandaPipeline; // Null ajuda o texto cinza a aparecer
-        public string? NovaDemandaPipeline
-        {
-            get => _novaDemandaPipeline;
-            set { _novaDemandaPipeline = value; OnPropertyChanged(); }
-        }
-
-        // --- PROPRIEDADES: GERENCIAR PIPELINE ---
         private bool _isFormularioPipelineVisivel;
         public bool IsFormularioPipelineVisivel
         {
@@ -65,23 +29,56 @@ namespace AlbTasks.ViewModels
             set { _isFormularioPipelineVisivel = value; OnPropertyChanged(); }
         }
 
-        public ObservableCollection<string> OpcoesEdicaoPipeline { get; set; } = new ObservableCollection<string>();
-
-        private string _opcaoEdicaoSelecionada = string.Empty;
-        public string OpcaoEdicaoSelecionada
+        private bool _isFormularioDiariaVisivel;
+        public bool IsFormularioDiariaVisivel
         {
-            get => _opcaoEdicaoSelecionada;
-            set
-            {
-                _opcaoEdicaoSelecionada = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(IsModoEdicao));
-                CarregarDadosPipelineParaEdicao();
-            }
+            get => _isFormularioDiariaVisivel;
+            set { _isFormularioDiariaVisivel = value; OnPropertyChanged(); }
         }
 
-        public bool IsModoEdicao => OpcaoEdicaoSelecionada != "➕ Criar Nova Pipeline" && !string.IsNullOrEmpty(OpcaoEdicaoSelecionada);
-        private string _pipelineOriginalNome = string.Empty;
+        // ------------------ DADOS PRINCIPAIS ------------------
+        public ObservableCollection<DemandaAtiva> DemandasAtivas { get; set; } = new();
+        
+        private DemandaAtiva? _demandaSelecionada;
+        public DemandaAtiva? DemandaSelecionada
+        {
+            get => _demandaSelecionada;
+            set { _demandaSelecionada = value; OnPropertyChanged(); AtualizarTextoPassoAtual(); }
+        }
+
+        private string _textoPassoAtual = "Selecione ou crie uma demanda";
+        public string TextoPassoAtual
+        {
+            get => _textoPassoAtual;
+            set { _textoPassoAtual = value; OnPropertyChanged(); }
+        }
+
+        // ------------------ FORMULÁRIO: NOVA DEMANDA ------------------
+        private string _novaDemandaNome = string.Empty;
+        public string NovaDemandaNome
+        {
+            get => _novaDemandaNome;
+            set { _novaDemandaNome = value; OnPropertyChanged(); }
+        }
+
+        public ObservableCollection<string> PipelinesDisponiveis { get; set; } = new();
+        
+        private string? _pipelineSelecionadaParaDemanda;
+        public string? PipelineSelecionadaParaDemanda
+        {
+            get => _pipelineSelecionadaParaDemanda;
+            set { _pipelineSelecionadaParaDemanda = value; OnPropertyChanged(); }
+        }
+
+        // ------------------ FORMULÁRIO: PIPELINE ------------------
+        public ObservableCollection<string> OpcoesEdicaoPipeline { get; set; } = new();
+        
+        private string? _opcaoEdicaoSelecionada;
+        public string? OpcaoEdicaoSelecionada
+        {
+            get => _opcaoEdicaoSelecionada;
+            set { _opcaoEdicaoSelecionada = value; CarregarPipelineParaEdicao(); OnPropertyChanged(); }
+        }
 
         private string _novoPipelineNome = string.Empty;
         public string NovoPipelineNome
@@ -97,8 +94,51 @@ namespace AlbTasks.ViewModels
             set { _novoPipelinePassos = value; OnPropertyChanged(); }
         }
 
-        // --- COMANDOS ---
-        public ICommand AvancarPassoCommand { get; }
+        private bool _isModoEdicao;
+        public bool IsModoEdicao
+        {
+            get => _isModoEdicao;
+            set { _isModoEdicao = value; OnPropertyChanged(); }
+        }
+
+        // ------------------ FORMULÁRIO: DIÁRIA (EDIÇÃO E EXCLUSÃO) ------------------
+        private string _novaDiariaTexto = string.Empty;
+        public string NovaDiariaTexto
+        {
+            get => _novaDiariaTexto;
+            set { _novaDiariaTexto = value; OnPropertyChanged(); }
+        }
+
+        private string _novaDiariaHorario = string.Empty;
+        public string NovaDiariaHorario
+        {
+            get => _novaDiariaHorario;
+            set { _novaDiariaHorario = value; OnPropertyChanged(); }
+        }
+
+        private bool _isModoEdicaoDiaria;
+        public bool IsModoEdicaoDiaria
+        {
+            get => _isModoEdicaoDiaria;
+            set { _isModoEdicaoDiaria = value; OnPropertyChanged(); }
+        }
+
+        private AtividadeDiaria? _diariaEmEdicao;
+
+        // ------------------ GAVETA DE ALERTAS ------------------
+        public ObservableCollection<LembreteViewModel> LembretesAtivos { get; set; } = new();
+        
+        private bool _isListaLembretesVisivel;
+        public bool IsListaLembretesVisivel
+        {
+            get => _isListaLembretesVisivel;
+            set { _isListaLembretesVisivel = value; OnPropertyChanged(); }
+        }
+
+        private List<AtividadeDiaria> _todasAsDiarias = new();
+        private DispatcherTimer _timerAlertas;
+
+        // ------------------ COMANDOS ------------------
         public ICommand AbrirFormCommand { get; }
         public ICommand CancelarFormCommand { get; }
         public ICommand SalvarNovaDemandaCommand { get; }
@@ -108,196 +148,351 @@ namespace AlbTasks.ViewModels
         public ICommand SalvarNovoPipelineCommand { get; }
         public ICommand ExcluirPipelineCommand { get; }
 
+        public ICommand AbrirFormDiariaCommand { get; }
+        public ICommand EditarDiariaCommand { get; }
+        public ICommand CancelarFormDiariaCommand { get; }
+        public ICommand SalvarNovaDiariaCommand { get; }
+        public ICommand ExcluirDiariaCommand { get; }
+        public ICommand ConcluirDiariaCommand { get; }
+
+        public ICommand AvancarPassoCommand { get; }
+        public ICommand VoltarPassoCommand { get; }
+
         public MainViewModel()
         {
-            _arquivos = new GerenciadorArquivos();
-            _templates = _arquivos.CarregarTemplates();
-            
-            var estadoSalvo = _arquivos.CarregarEstado();
-            DemandasAtivas = new ObservableCollection<DemandaAtiva>(estadoSalvo);
-            TiposDePipeline = new ObservableCollection<string>(_templates.Keys);
+            AbrirFormCommand = new RelayCommand(_ => AbrirFormularioNovaDemanda());
+            CancelarFormCommand = new RelayCommand(_ => IsFormularioVisivel = false);
+            SalvarNovaDemandaCommand = new RelayCommand(_ => SalvarDemanda());
 
-            // Inicia já puxando a primeira demanda para a tela
-            DemandaSelecionada = DemandasAtivas.FirstOrDefault();
-            AtualizarTextoPassoAtual();
+            AbrirFormPipelineCommand = new RelayCommand(_ => AbrirFormularioPipeline());
+            CancelarFormPipelineCommand = new RelayCommand(_ => IsFormularioPipelineVisivel = false);
+            SalvarNovoPipelineCommand = new RelayCommand(_ => SalvarPipeline());
+            ExcluirPipelineCommand = new RelayCommand(_ => ExcluirPipeline());
 
-            AvancarPassoCommand = new RelayCommand(AvancarPasso);
-            
-            AbrirFormCommand = new RelayCommand(() => 
-            {
-                NovaDemandaNome = string.Empty;
-                NovaDemandaPipeline = null; 
-                IsFormularioVisivel = true;
-            });
-            
-            CancelarFormCommand = new RelayCommand(() => 
-            {
-                IsFormularioVisivel = false;
-                NovaDemandaNome = string.Empty;
-            });
-            
-            SalvarNovaDemandaCommand = new RelayCommand(SalvarNovaDemanda);
+            AbrirFormDiariaCommand = new RelayCommand(_ => AbrirFormularioDiariaNova());
+            EditarDiariaCommand = new ParamCommand(param => AbrirFormularioDiariaEdicao(param as AtividadeDiaria));
+            CancelarFormDiariaCommand = new RelayCommand(_ => IsFormularioDiariaVisivel = false);
+            SalvarNovaDiariaCommand = new RelayCommand(_ => SalvarDiaria());
+            ExcluirDiariaCommand = new RelayCommand(_ => ExcluirDiaria());
+            ConcluirDiariaCommand = new ParamCommand(param => ConcluirAtividadeDiaria(param as AtividadeDiaria));
 
-            AbrirFormPipelineCommand = new RelayCommand(() => 
-            {
-                AtualizarOpcoesEdicao();
-                OpcaoEdicaoSelecionada = "➕ Criar Nova Pipeline";
-                IsFormularioPipelineVisivel = true;
-            });
-            
-            CancelarFormPipelineCommand = new RelayCommand(() => 
-            {
-                IsFormularioPipelineVisivel = false;
-                NovoPipelineNome = string.Empty;
-                NovoPipelinePassos = string.Empty;
-            });
-            
-            SalvarNovoPipelineCommand = new RelayCommand(SalvarNovoPipeline);
-            ExcluirPipelineCommand = new RelayCommand(ExcluirPipeline);
+            AvancarPassoCommand = new RelayCommand(_ => AvancarPasso());
+            VoltarPassoCommand = new RelayCommand(_ => VoltarPasso());
+
+            CarregarDadosIniciais();
+
+            _timerAlertas = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+            _timerAlertas.Tick += (s, e) => AtualizarAlertasDiarios();
+            _timerAlertas.Start();
         }
 
-        private void AtualizarOpcoesEdicao()
+        // ------------------ DEMANDAS E PIPELINES ------------------
+        private void AbrirFormularioNovaDemanda()
+        {
+            NovaDemandaNome = string.Empty;
+            AtualizarPipelinesDisponiveis();
+            IsFormularioVisivel = true;
+        }
+
+        private void AtualizarPipelinesDisponiveis()
+        {
+            PipelinesDisponiveis.Clear();
+            var dict = GerenciadorArquivos.CarregarPipelines();
+            foreach (var key in dict.Keys)
+                PipelinesDisponiveis.Add(key);
+            if (PipelinesDisponiveis.Any())
+                PipelineSelecionadaParaDemanda = PipelinesDisponiveis.First();
+        }
+
+        private void SalvarDemanda()
+        {
+            if (string.IsNullOrWhiteSpace(NovaDemandaNome) || string.IsNullOrEmpty(PipelineSelecionadaParaDemanda)) return;
+
+            var dict = GerenciadorArquivos.CarregarPipelines();
+            if (dict.TryGetValue(PipelineSelecionadaParaDemanda, out var passos))
+            {
+                var nova = new DemandaAtiva
+                {
+                    NomeDemanda = NovaDemandaNome,
+                    NomePipeline = PipelineSelecionadaParaDemanda,
+                    Passos = passos,
+                    IndicePassoAtual = 0
+                };
+                DemandasAtivas.Add(nova);
+                DemandaSelecionada = nova;
+                SalvarEstadoAtual();
+            }
+            IsFormularioVisivel = false;
+        }
+
+        private void AbrirFormularioPipeline()
+        {
+            IsModoEdicao = false;
+            NovoPipelineNome = string.Empty;
+            NovoPipelinePassos = string.Empty;
+            AtualizarOpcoesEdicaoPipeline();
+            IsFormularioPipelineVisivel = true;
+        }
+
+        private void AtualizarOpcoesEdicaoPipeline()
         {
             OpcoesEdicaoPipeline.Clear();
-            OpcoesEdicaoPipeline.Add("➕ Criar Nova Pipeline");
-            foreach (var p in TiposDePipeline) OpcoesEdicaoPipeline.Add(p);
+            OpcoesEdicaoPipeline.Add("+ Criar Novo Pipeline");
+            var dict = GerenciadorArquivos.CarregarPipelines();
+            foreach (var key in dict.Keys)
+                OpcoesEdicaoPipeline.Add(key);
+            OpcaoEdicaoSelecionada = OpcoesEdicaoPipeline.First();
         }
 
-        private void CarregarDadosPipelineParaEdicao()
+        private void CarregarPipelineParaEdicao()
         {
-            if (IsModoEdicao && _templates.ContainsKey(OpcaoEdicaoSelecionada))
+            if (OpcaoEdicaoSelecionada == null || OpcaoEdicaoSelecionada == "+ Criar Novo Pipeline")
             {
-                _pipelineOriginalNome = OpcaoEdicaoSelecionada;
-                NovoPipelineNome = OpcaoEdicaoSelecionada;
-                NovoPipelinePassos = string.Join("; ", _templates[OpcaoEdicaoSelecionada]);
+                IsModoEdicao = false;
+                NovoPipelineNome = string.Empty;
+                NovoPipelinePassos = string.Empty;
             }
             else
             {
-                _pipelineOriginalNome = string.Empty;
-                NovoPipelineNome = string.Empty;
-                NovoPipelinePassos = string.Empty;
+                IsModoEdicao = true;
+                NovoPipelineNome = OpcaoEdicaoSelecionada;
+                var dict = GerenciadorArquivos.CarregarPipelines();
+                if (dict.TryGetValue(OpcaoEdicaoSelecionada, out var passos))
+                {
+                    NovoPipelinePassos = string.Join("; ", passos);
+                }
             }
         }
 
-        private void SalvarNovoPipeline()
+        private void SalvarPipeline()
         {
-            if (string.IsNullOrWhiteSpace(NovoPipelineNome) || string.IsNullOrWhiteSpace(NovoPipelinePassos))
-                return;
+            if (string.IsNullOrWhiteSpace(NovoPipelineNome) || string.IsNullOrWhiteSpace(NovoPipelinePassos)) return;
 
-            var passos = NovoPipelinePassos
-                .Split(';', StringSplitOptions.RemoveEmptyEntries)
-                .Select(p => p.Trim())
-                .Where(p => !string.IsNullOrEmpty(p))
-                .ToList();
-
-            if (passos.Count == 0) return;
-
-            if (IsModoEdicao && _pipelineOriginalNome != NovoPipelineNome)
-            {
-                _templates.Remove(_pipelineOriginalNome);
-                TiposDePipeline.Remove(_pipelineOriginalNome);
-                
-                foreach (var d in DemandasAtivas.Where(x => x.TipoPipeline == _pipelineOriginalNome))
-                {
-                    d.TipoPipeline = NovoPipelineNome;
-                }
-                _arquivos.SalvarEstado(DemandasAtivas.ToList());
-            }
-
-            _templates[NovoPipelineNome] = passos;
-            if (!TiposDePipeline.Contains(NovoPipelineNome)) TiposDePipeline.Add(NovoPipelineNome);
-
-            _arquivos.SalvarTemplates(_templates);
-            NovaDemandaPipeline = NovoPipelineNome; 
-            AtualizarTextoPassoAtual(); 
-
-            AtualizarOpcoesEdicao();
-            OpcaoEdicaoSelecionada = "➕ Criar Nova Pipeline";
+            var listaPassos = NovoPipelinePassos.Split(';', StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
+            var dict = GerenciadorArquivos.CarregarPipelines();
+            
+            dict[NovoPipelineNome] = listaPassos;
+            GerenciadorArquivos.SalvarPipelines(dict);
+            IsFormularioPipelineVisivel = false;
         }
 
         private void ExcluirPipeline()
         {
-            if (IsModoEdicao)
+            if (!IsModoEdicao || string.IsNullOrEmpty(NovoPipelineNome)) return;
+
+            var dict = GerenciadorArquivos.CarregarPipelines();
+            if (dict.ContainsKey(NovoPipelineNome))
             {
-                _templates.Remove(_pipelineOriginalNome);
-                TiposDePipeline.Remove(_pipelineOriginalNome);
-                _arquivos.SalvarTemplates(_templates);
-                
-                var demandasRemover = DemandasAtivas.Where(x => x.TipoPipeline == _pipelineOriginalNome).ToList();
-                foreach (var d in demandasRemover) DemandasAtivas.Remove(d);
-                _arquivos.SalvarEstado(DemandasAtivas.ToList());
-
-                if (DemandaSelecionada != null && demandasRemover.Contains(DemandaSelecionada))
-                {
-                    DemandaSelecionada = DemandasAtivas.FirstOrDefault();
-                }
-
-                AtualizarOpcoesEdicao();
-                OpcaoEdicaoSelecionada = "➕ Criar Nova Pipeline";
+                dict.Remove(NovoPipelineNome);
+                GerenciadorArquivos.SalvarPipelines(dict);
             }
+            IsFormularioPipelineVisivel = false;
         }
 
-        private void SalvarNovaDemanda()
+        // ------------------ DIÁRIAS (EDIÇÃO E EXCLUSÃO) ------------------
+        private void AbrirFormularioDiariaNova()
         {
-            // O GRITO DE AVISO
-            if (string.IsNullOrWhiteSpace(NovaDemandaNome))
-            {
-                MessageBox.Show("Você precisa dar um nome para a demanda!", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(NovaDemandaPipeline)) 
-            {
-                MessageBox.Show("Por favor, selecione uma opção de pipeline na lista!", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            var nova = new DemandaAtiva { NomeDemanda = NovaDemandaNome, TipoPipeline = NovaDemandaPipeline, IndicePassoAtual = 0 };
-            DemandasAtivas.Add(nova);
-            _arquivos.SalvarEstado(DemandasAtivas.ToList());
-            DemandaSelecionada = nova; 
-            CancelarFormCommand.Execute(null);
+            IsModoEdicaoDiaria = false;
+            _diariaEmEdicao = null;
+            NovaDiariaTexto = string.Empty;
+            NovaDiariaHorario = DateTime.Now.AddHours(1).ToString("HH:mm");
+            IsFormularioDiariaVisivel = true;
         }
 
-        private void AvancarPasso()
+        private void AbrirFormularioDiariaEdicao(AtividadeDiaria? atividade)
         {
-            if (DemandaSelecionada == null || !_templates.ContainsKey(DemandaSelecionada.TipoPipeline)) return;
+            if (atividade == null) return;
+            IsModoEdicaoDiaria = true;
+            _diariaEmEdicao = atividade;
+            NovaDiariaTexto = atividade.Texto;
+            NovaDiariaHorario = atividade.HorarioAlerta.ToString("HH:mm");
+            IsFormularioDiariaVisivel = true;
+        }
 
-            var passos = _templates[DemandaSelecionada.TipoPipeline];
-            DemandaSelecionada.IndicePassoAtual++;
+        private void SalvarDiaria()
+        {
+            if (string.IsNullOrWhiteSpace(NovaDiariaTexto) || !TimeSpan.TryParse(NovaDiariaHorario, out var ts)) return;
 
-            if (DemandaSelecionada.IndicePassoAtual >= passos.Count)
+            var horarioAlerta = DateTime.Today.Add(ts);
+
+            if (IsModoEdicaoDiaria && _diariaEmEdicao != null)
             {
-                DemandasAtivas.Remove(DemandaSelecionada);
-                DemandaSelecionada = DemandasAtivas.FirstOrDefault(); // Pula pra próxima
-
-                if (DemandaSelecionada == null)
-                {
-                    TextoPassoAtual = "Demanda Finalizada! 🎉\nNenhuma outra pendente.";
-                }
+                _diariaEmEdicao.Texto = NovaDiariaTexto;
+                _diariaEmEdicao.HorarioAlerta = horarioAlerta;
             }
             else
             {
-                AtualizarTextoPassoAtual();
+                var nova = new AtividadeDiaria
+                {
+                    Texto = NovaDiariaTexto,
+                    HorarioAlerta = horarioAlerta,
+                    Concluida = false
+                };
+                _todasAsDiarias.Add(nova);
             }
 
-            _arquivos.SalvarEstado(DemandasAtivas.ToList());
+            SalvarDiariasNoArquivo();
+            AtualizarAlertasDiarios();
+            IsFormularioDiariaVisivel = false;
+        }
+
+        private void ExcluirDiaria()
+        {
+            if (!IsModoEdicaoDiaria || _diariaEmEdicao == null) return;
+
+            _todasAsDiarias.Remove(_diariaEmEdicao);
+            SalvarDiariasNoArquivo();
+            AtualizarAlertasDiarios();
+            IsFormularioDiariaVisivel = false;
+        }
+
+        private void ConcluirAtividadeDiaria(AtividadeDiaria? atividade)
+        {
+            if (atividade == null) return;
+            atividade.Concluida = true;
+            SalvarDiariasNoArquivo();
+            AtualizarAlertasDiarios();
+        }
+
+        private void AtualizarAlertasDiarios()
+        {
+            LembretesAtivos.Clear();
+            var agora = DateTime.Now;
+
+            foreach (var d in _todasAsDiarias.Where(x => !x.Concluida))
+            {
+                var diff = d.HorarioAlerta - agora;
+                int nivel = 0;
+
+                if (diff.TotalMinutes <= 15 && diff.TotalMinutes > 5)
+                    nivel = 1; // Alerta
+                else if (diff.TotalMinutes <= 5)
+                    nivel = 2; // Urgente
+
+                LembretesAtivos.Add(new LembreteViewModel
+                {
+                    Texto = $"{d.Texto} ({d.HorarioAlerta:HH:mm})",
+                    NivelUrgencia = nivel,
+                    AtividadeOriginal = d
+                });
+            }
+
+            IsListaLembretesVisivel = LembretesAtivos.Any();
+        }
+
+        // ------------------ NAVEGAÇÃO DOS PASSOS ------------------
+        private void AvancarPasso()
+        {
+            if (DemandaSelecionada == null) return;
+            if (DemandaSelecionada.IndicePassoAtual < DemandaSelecionada.Passos.Count - 1)
+            {
+                DemandaSelecionada.IndicePassoAtual++;
+                AtualizarTextoPassoAtual();
+                SalvarEstadoAtual();
+            }
+            else
+            {
+                DemandasAtivas.Remove(DemandaSelecionada);
+                DemandaSelecionada = DemandasAtivas.FirstOrDefault();
+                SalvarEstadoAtual();
+            }
+        }
+
+        private void VoltarPasso()
+        {
+            if (DemandaSelecionada == null) return;
+            if (DemandaSelecionada.IndicePassoAtual > 0)
+            {
+                DemandaSelecionada.IndicePassoAtual--;
+                AtualizarTextoPassoAtual();
+                SalvarEstadoAtual();
+            }
         }
 
         private void AtualizarTextoPassoAtual()
         {
-            if (DemandaSelecionada == null)
+            if (DemandaSelecionada != null && DemandaSelecionada.Passos.Any())
             {
-                TextoPassoAtual = DemandasAtivas.Any() 
-                    ? "Selecione uma demanda acima 👆" 
-                    : "Tudo limpo! Nenhuma demanda pendente. ☕";
-                return;
+                TextoPassoAtual = DemandaSelecionada.Passos[DemandaSelecionada.IndicePassoAtual];
             }
-
-            if (_templates.TryGetValue(DemandaSelecionada.TipoPipeline, out var passos) && DemandaSelecionada.IndicePassoAtual < passos.Count)
+            else
             {
-                TextoPassoAtual = passos[DemandaSelecionada.IndicePassoAtual];
+                TextoPassoAtual = "Nenhuma demanda ativa";
             }
         }
+
+        // ------------------ PERSISTÊNCIA ------------------
+        private void SalvarEstadoAtual()
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(DemandasAtivas);
+                File.WriteAllText("estado_atual.json", json);
+            }
+            catch { }
+        }
+
+        private void SalvarDiariasNoArquivo()
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(_todasAsDiarias);
+                File.WriteAllText("diarias.json", json);
+            }
+            catch { }
+        }
+
+        private void CarregarDadosIniciais()
+        {
+            try
+            {
+                if (File.Exists("estado_atual.json"))
+                {
+                    var json = File.ReadAllText("estado_atual.json");
+                    var lista = JsonSerializer.Deserialize<List<DemandaAtiva>>(json);
+                    if (lista != null)
+                    {
+                        foreach (var d in lista) DemandasAtivas.Add(d);
+                        DemandaSelecionada = DemandasAtivas.FirstOrDefault();
+                    }
+                }
+
+                if (File.Exists("diarias.json"))
+                {
+                    var json = File.ReadAllText("diarias.json");
+                    var lista = JsonSerializer.Deserialize<List<AtividadeDiaria>>(json);
+                    if (lista != null)
+                    {
+                        _todasAsDiarias = lista;
+                    }
+                }
+            }
+            catch { }
+            AtualizarAlertasDiarios();
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string? name = null) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
+
+    public class ParamCommand : ICommand
+    {
+        private readonly Action<object?> _execute;
+        public ParamCommand(Action<object?> execute) => _execute = execute;
+        public event EventHandler? CanExecuteChanged
+        {
+            add => CommandManager.RequerySuggested += value;
+            remove => CommandManager.RequerySuggested -= value;
+        }
+        public bool CanExecute(object? parameter) => true;
+        public void Execute(object? parameter) => _execute(parameter);
+    }
+
+    public class LembreteViewModel
+    {
+        public string Texto { get; set; } = string.Empty;
+        public int NivelUrgencia { get; set; }
+        public AtividadeDiaria AtividadeOriginal { get; set; } = new();
     }
 }

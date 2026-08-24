@@ -1,0 +1,41 @@
+<UserControl x:Class="AlbTasks.Views.FormDiaria"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
+    <!-- Fundo branco opaco e largura fixa idêntica aos outros formulários -->
+    <Grid Background="White" Margin="10" Width="510">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Atividade Diária" FontSize="18" FontWeight="Bold" Margin="0,0,0,12" HorizontalAlignment="Center"/>
+        
+        <TextBlock Grid.Row="1" Text="Descrição da Atividade:" FontSize="12" Foreground="Gray" Margin="0,0,0,2"/>
+        <TextBox Grid.Row="2" Text="{Binding NovaDiariaTexto, UpdateSourceTrigger=PropertyChanged}" FontSize="14" Padding="6" Margin="0,0,0,10"/>
+        
+        <TextBlock Grid.Row="3" Text="Horário (ex: 14:30):" FontSize="12" Foreground="Gray" Margin="0,0,0,2"/>
+        <TextBox Grid.Row="4" Text="{Binding NovaDiariaHorario, UpdateSourceTrigger=PropertyChanged}" FontSize="14" Padding="6" Margin="0,0,0,15"/>
+        
+        <Grid Grid.Row="5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <!-- Botão de Excluir (aparece apenas quando estiver editando uma atividade existente) -->
+            <Button Grid.Column="0" Content="🗑️" Command="{Binding ExcluirDiariaCommand}" Visibility="{Binding IsModoEdicaoDiaria, Converter={StaticResource BoolToVis}}" Margin="0,0,10,0" Padding="8,8" Width="40" Background="#DC143C" Foreground="White" BorderThickness="0" Cursor="Hand" ToolTip="Excluir Atividade"/>
+            
+            <Button Grid.Column="1" Content="Cancelar" Command="{Binding CancelarFormDiariaCommand}" Margin="0,0,5,0" Padding="8" Background="Gray" Foreground="White" BorderThickness="0" Cursor="Hand"/>
+            <Button Grid.Column="2" Content="Salvar" Command="{Binding SalvarNovaDiariaCommand}" Margin="5,0,0,0" Padding="8" Background="#2E8B57" Foreground="White" BorderThickness="0" Cursor="Hand"/>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -4,47 +4,32 @@ using System.Text.Json;
 
 namespace AlbTasks.Models
 {
-    public class GerenciadorArquivos
+    public static class GerenciadorArquivos
     {
-        private readonly string caminhoPipelines = "pipelines.json";
-        private readonly string caminhoEstado = "estado_atual.json";
+        private static readonly string ArquivoPipelines = "pipelines.json";
 
-        public Dictionary<string, List<string>> CarregarTemplates()
+        public static Dictionary<string, List<string>> CarregarPipelines()
         {
-            if (!File.Exists(caminhoPipelines))
-                return new Dictionary<string, List<string>>(); 
-
-            string json = File.ReadAllText(caminhoPipelines);
-            return JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json) ?? new();
+            if (!File.Exists(ArquivoPipelines)) return new Dictionary<string, List<string>>();
+            try
+            {
+                var json = File.ReadAllText(ArquivoPipelines);
+                return JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json) ?? new();
+            }
+            catch
+            {
+                return new Dictionary<string, List<string>>();
+            }
         }
 
-        public void SalvarTemplates(Dictionary<string, List<string>> templates)
+        public static void SalvarPipelines(Dictionary<string, List<string>> pipelines)
         {
-            var options = new JsonSerializerOptions { 
-                WriteIndented = true,
-                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-            };
-            string json = JsonSerializer.Serialize(templates, options);
-            File.WriteAllText(caminhoPipelines, json);
-        }
-
-        public List<DemandaAtiva> CarregarEstado()
-        {
-            if (!File.Exists(caminhoEstado))
-                return new List<DemandaAtiva>();
-
-            string json = File.ReadAllText(caminhoEstado);
-            return JsonSerializer.Deserialize<List<DemandaAtiva>>(json) ?? new();
-        }
-
-        public void SalvarEstado(List<DemandaAtiva> demandas)
-        {
-            var options = new JsonSerializerOptions { 
-                WriteIndented = true,
-                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping 
-            };
-            string json = JsonSerializer.Serialize(demandas, options);
-            File.WriteAllText(caminhoEstado, json);
+            try
+            {
+                var json = JsonSerializer.Serialize(pipelines);
+                File.WriteAllText(ArquivoPipelines, json);
+            }
+            catch { }
         }
     }
 }

@@ -1,18 +1,42 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <!-- MUDAMOS DE WinExe PARA Exe PARA REVELAR O ERRO -->
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UseWPF>true</UseWPF>
+    <EnableDefaultPageItems>false</EnableDefaultPageItems>
+    <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Update="pipelines.json">
+    <ApplicationDefinition Include="App.xaml" />
+    <Compile Update="App.xaml.cs" DependentUpon="App.xaml" />
+
+    <Page Include="MainWindow.xaml" />
+    <Page Include="Views\FormDiaria.xaml" />
+    <Page Include="Views\FormNovaDemanda.xaml" />
+    <Page Include="Views\FormPipeline.xaml" />
+
+    <Compile Update="MainWindow.xaml.cs" DependentUpon="MainWindow.xaml" />
+    <Compile Update="Views\FormDiaria.xaml.cs" DependentUpon="Views\FormDiaria.xaml" />
+    <Compile Update="Views\FormNovaDemanda.xaml.cs" DependentUpon="Views\FormNovaDemanda.xaml" />
+    <Compile Update="Views\FormPipeline.xaml.cs" DependentUpon="Views\FormPipeline.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Copia os arquivos de dados (tarefas e pipelines) para a pasta de execução -->
+    <None Update="*.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="estado_atual.json">
+    
+    <!-- Se você for colocar o ícone de volta depois, pode deixar ele aqui também -->
+    <None Update="icon.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

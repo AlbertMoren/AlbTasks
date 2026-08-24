@@ -1,0 +1,33 @@
+<UserControl x:Class="AlbTasks.Views.FormNovaDemanda"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
+    <!-- Fundo branco opaco para cobrir a tela principal e largura fixa idêntica -->
+    <Grid Background="White" Margin="10" Width="510">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Nova Demanda" FontSize="18" FontWeight="Bold" Margin="0,0,0,12" HorizontalAlignment="Center"/>
+        
+        <TextBlock Grid.Row="1" Text="Nome da Demanda:" FontSize="12" Foreground="Gray" Margin="0,0,0,2"/>
+        <TextBox Grid.Row="2" Text="{Binding NovaDemandaNome, UpdateSourceTrigger=PropertyChanged}" FontSize="14" Padding="6" Margin="0,0,0,10"/>
+        
+        <TextBlock Grid.Row="3" Text="Selecione a Pipeline:" FontSize="12" Foreground="Gray" Margin="0,0,0,2"/>
+        <ComboBox Grid.Row="4" ItemsSource="{Binding PipelinesDisponiveis}" SelectedItem="{Binding PipelineSelecionadaParaDemanda}" FontSize="14" Padding="6" Margin="0,0,0,15" Background="#F0F0F0"/>
+        
+        <Grid Grid.Row="5">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <Button Grid.Column="0" Content="Cancelar" Command="{Binding CancelarFormCommand}" Margin="0,0,5,0" Padding="8" Background="Gray" Foreground="White" BorderThickness="0" Cursor="Hand"/>
+            <Button Grid.Column="1" Content="Salvar" Command="{Binding SalvarNovaDemandaCommand}" Margin="5,0,0,0" Padding="8" Background="#2E8B57" Foreground="White" BorderThickness="0" Cursor="Hand"/>
+        </Grid>
+    </Grid>
+</UserControl>
